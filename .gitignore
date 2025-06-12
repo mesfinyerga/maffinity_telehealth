@@ -1,0 +1,49 @@
+# Node.js (frontend & mobile-app)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.env
+.env.*.local
+
+# Python (FastAPI backend)
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+venv/
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+
+# Docker
+*.pid
+*.seed
+docker-compose.override.yml
+
+# Tests
+.coverage
+htmlcov/
+pytest_cache/
+.cache/
+junit-*.xml
+
+# GitHub Actions cache
+.github/workflows/.cache/
