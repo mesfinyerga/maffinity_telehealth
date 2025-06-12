@@ -32,11 +32,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: development
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: telehealth_db
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/telehealth_db
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
@@ -47,6 +43,43 @@ services:
     volumes:
       - ./backend/telehealth-api:/app
       - /app/node_modules
+    command: sh -c "npm run migration:run && node dist/main.js"
+
+  doctor-portal:
+    build:
+      context: ./frontend/doctor-portal
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
+    volumes:
+      - ./frontend/doctor-portal:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: npm run dev
+
+  patient-app:
+    build:
+      context: ./frontend/patient-app
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
+    volumes:
+      - ./frontend/patient-app:/app
+      - /app/node_modules
+    ports:
+      - "5174:5174"
+    command: npm run dev
+
+  admin-dashboard:
+    build:
+      context: ./frontend/admin-dashboard
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
+    volumes:
+      - ./frontend/admin-dashboard:/app
+      - /app/node_modules
+    ports:
+      - "5175:5175"
+    command: npm run dev
 
 volumes:
   postgres_data:

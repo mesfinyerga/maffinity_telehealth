@@ -32,11 +32,7 @@ import { Notification } from './notifications/notification.entity';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT) || 5432,
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_NAME || 'telehealth',
+      url: process.env.DATABASE_URL,
       entities: [
         User,
         PatientProfile,
@@ -49,7 +45,7 @@ import { Notification } from './notifications/notification.entity';
         Message,
         Notification,
       ],
-      synchronize: process.env.NODE_ENV !== 'production', // Only for development
+      synchronize: false,
       logging: process.env.NODE_ENV === 'development',
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),

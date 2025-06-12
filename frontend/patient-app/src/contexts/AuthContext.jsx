@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { login as apiLogin, register as apiRegister, validateToken } from '../lib/authService';
 
 const AuthContext = createContext();
 
@@ -10,75 +11,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Mock authentication service for development
-const mockAuthService = {
-  login: async (email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (email === 'patient@telehealth.com' && password === 'patient123') {
-      const mockUser = {
-        id: '1',
-        email: 'patient@telehealth.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'PATIENT',
-        phone: '+251911234567',
-        dateOfBirth: '1990-01-15',
-        gender: 'male',
-        onboardingCompleted: true
-      };
-      
-      const mockToken = 'mock-patient-token-' + Date.now();
-      
-      return {
-        success: true,
-        user: mockUser,
-        accessToken: mockToken,
-        refreshToken: 'mock-refresh-token'
-      };
-    }
-    
-    throw new Error('Invalid credentials');
-  },
-  
-  register: async (userData) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const mockUser = {
-      id: Date.now().toString(),
-      ...userData,
-      role: 'PATIENT',
-      onboardingCompleted: false
-    };
-    
-    const mockToken = 'mock-patient-token-' + Date.now();
-    
-    return {
-      success: true,
-      user: mockUser,
-      accessToken: mockToken,
-      refreshToken: 'mock-refresh-token'
-    };
-  },
-  
-  validateToken: async (token) => {
-    if (token && token.startsWith('mock-patient-token')) {
-      return {
-        id: '1',
-        email: 'patient@telehealth.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'PATIENT',
-        phone: '+251911234567',
-        dateOfBirth: '1990-01-15',
-        gender: 'male',
-        onboardingCompleted: true
-      };
-    }
-    
-    throw new Error('Invalid token');
-  }
-};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -89,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       if (token) {
         try {
-          const userData = await mockAuthService.validateToken(token);
+          const userData = await validateToken(token);
           setUser(userData);
         } catch (error) {
           console.error('Auth validation failed:', error);
@@ -105,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const data = await mockAuthService.login(email, password);
+      const data = await apiLogin(email, password);
       localStorage.setItem('patientToken', data.accessToken);
       setToken(data.accessToken);
       setUser(data.user);
@@ -117,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const data = await mockAuthService.register(userData);
+      const data = await apiRegister(userData);
       localStorage.setItem('patientToken', data.accessToken);
       setToken(data.accessToken);
       setUser(data.user);

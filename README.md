@@ -12,7 +12,7 @@ telehealth-platform/
 │   └── telehealth-api/        # Main API application
 ├── frontend/                   # React Frontend Applications
 │   ├── doctor-portal/         # Doctor Web Portal
-│   ├── patient-app/           # Patient Mobile App
+│   ├── patient-app/           # Patient Web App
 │   └── admin-dashboard/       # Admin Dashboard
 ├── infrastructure/             # Cloud Infrastructure
 │   ├── terraform/             # Infrastructure as Code
@@ -102,7 +102,7 @@ npm run migration:run
 
 #### Frontend Applications
 - **Doctor Portal**: Professional dashboard with patient management
-- **Patient App**: Mobile-first with AI triage and multilingual support
+- **Patient App**: Web-based with AI triage and multilingual support
 - **Admin Dashboard**: System management and analytics
 
 #### Key Features
