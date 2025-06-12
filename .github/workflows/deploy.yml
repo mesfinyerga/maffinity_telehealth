@@ -1,0 +1,240 @@
+name: Deploy TeleHealth Platform
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: telehealth/backend
+  ECS_SERVICE: telehealth-backend
+  ECS_CLUSTER: telehealth-cluster
+  ECS_TASK_DEFINITION: telehealth-backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: telehealth_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/telehealth-api/package-lock.json
+
+    - name: Install backend dependencies
+      working-directory: backend/telehealth-api
+      run: npm ci
+
+    - name: Run backend tests
+      working-directory: backend/telehealth-api
+      run: npm run test
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USERNAME: postgres
+        DB_PASSWORD: postgres
+        DB_NAME: telehealth_test
+        JWT_SECRET: test-secret
+        NODE_ENV: test
+
+    - name: Run backend e2e tests
+      working-directory: backend/telehealth-api
+      run: npm run test:e2e
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USERNAME: postgres
+        DB_PASSWORD: postgres
+        DB_NAME: telehealth_test
+        JWT_SECRET: test-secret
+        NODE_ENV: test
+
+  build-and-deploy-backend:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd backend/telehealth-api
+        docker build -f ../../infrastructure/docker/Dockerfile.backend -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Download task definition
+      run: |
+        aws ecs describe-task-definition --task-definition $ECS_TASK_DEFINITION --query taskDefinition > task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: backend
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
+
+  deploy-frontend:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    strategy:
+      matrix:
+        app: [doctor-portal, patient-app, admin-dashboard]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/${{ matrix.app }}/package-lock.json
+
+    - name: Install dependencies
+      working-directory: frontend/${{ matrix.app }}
+      run: npm ci
+
+    - name: Build application
+      working-directory: frontend/${{ matrix.app }}
+      run: npm run build
+      env:
+        VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        VITE_WS_URL: ${{ secrets.WS_URL }}
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Deploy to S3
+      working-directory: frontend/${{ matrix.app }}
+      run: |
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_PREFIX }}-${{ matrix.app }} --delete
+
+    - name: Invalidate CloudFront
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_PREFIX }}-${{ matrix.app }} --paths "/*"
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Terraform Init
+      working-directory: infrastructure/terraform
+      run: terraform init
+
+    - name: Terraform Plan
+      working-directory: infrastructure/terraform
+      run: terraform plan -out=tfplan
+      env:
+        TF_VAR_environment: production
+        TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+        TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+
+    - name: Terraform Apply
+      working-directory: infrastructure/terraform
+      run: terraform apply tfplan
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  notify:
+    needs: [build-and-deploy-backend, deploy-frontend, infrastructure]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Notify deployment status
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
+
