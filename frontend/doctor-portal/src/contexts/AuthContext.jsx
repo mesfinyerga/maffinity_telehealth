@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { mockAuthService } from '../lib/mockAuth';
+import { login as apiLogin, validateToken } from "../lib/authService";
 
 const AuthContext = createContext();
 
@@ -20,8 +20,7 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       if (token) {
         try {
-          // Use mock service for development
-          const userData = await mockAuthService.validateToken(token);
+          const userData = await validateToken(token);
           setUser(userData);
         } catch (error) {
           console.error('Auth validation failed:', error);
@@ -37,8 +36,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Use mock service for development
-      const data = await mockAuthService.login(email, password);
+      const data = await apiLogin(email, password);
       localStorage.setItem('token', data.accessToken);
       setToken(data.accessToken);
       setUser(data.user);

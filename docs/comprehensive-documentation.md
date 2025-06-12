@@ -33,15 +33,15 @@ Database integration tests validate the complex relationships between users, pat
 
 The frontend testing strategy employs React Testing Library and Jest to ensure component reliability, user interaction validation, and accessibility compliance. The doctor portal tests validate the professional dashboard interface, including real-time statistics display, appointment management functionality, and consultation interface responsiveness. These tests specifically verify that charts and data visualizations render correctly with mock data, theme switching operates seamlessly between light and dark modes, and responsive design adapts appropriately across different screen sizes.
 
-The patient mobile application tests focus on the unique multilingual capabilities and mobile-first design principles. These tests validate the language switching functionality between English and Amharic, ensuring that all interface elements, error messages, and AI responses adapt correctly to the selected language. The AI triage chatbot tests verify that symptom input processing works correctly, urgency level indicators display with appropriate visual styling, and the conversation history maintains proper chronological order.
+The patient application tests focus on the unique multilingual capabilities and mobile-first design principles. These tests validate the language switching functionality between English and Amharic, ensuring that all interface elements, error messages, and AI responses adapt correctly to the selected language. The AI triage chatbot tests verify that symptom input processing works correctly, urgency level indicators display with appropriate visual styling, and the conversation history maintains proper chronological order.
 
-Accessibility testing ensures compliance with WCAG 2.1 guidelines, validating proper ARIA labels, keyboard navigation support, and sufficient color contrast ratios across all interface elements. The responsive design tests verify that the mobile applications maintain usability across different device sizes, from small smartphones to large tablets, with appropriate touch target sizes and gesture support.
+Accessibility testing ensures compliance with WCAG 2.1 guidelines, validating proper ARIA labels, keyboard navigation support, and sufficient color contrast ratios across all interface elements. The responsive design tests verify that the web applications maintain usability across different device sizes, from small smartphones to large tablets, with appropriate touch target sizes and gesture support.
 
 #### End-to-End Testing Scenarios
 
 The end-to-end testing framework utilizes Playwright to simulate complete user workflows across all three applications. These tests validate the entire patient journey from registration through AI triage consultation to appointment booking and video consultation completion. The doctor workflow tests ensure seamless transitions between patient management, consultation delivery, and AI-assisted diagnosis review.
 
-Cross-platform integration tests verify that data synchronization works correctly between applications, ensuring that patient information updated in the mobile app immediately reflects in the doctor portal, and that AI analysis results are properly shared between the patient interface and doctor review systems. Performance tests validate that page load times remain under acceptable thresholds even with large datasets, and that real-time features like chat messaging maintain responsiveness under concurrent user loads.
+Cross-platform integration tests verify that data synchronization works correctly between applications, ensuring that patient information updated in the patient app immediately reflects in the doctor portal, and that AI analysis results are properly shared between the patient interface and doctor review systems. Performance tests validate that page load times remain under acceptable thresholds even with large datasets, and that real-time features like chat messaging maintain responsiveness under concurrent user loads.
 
 ### Security Testing Protocols
 
@@ -81,7 +81,7 @@ Version control ensures that document updates maintain historical records while 
 
 ### Patient Mobile Application Guide
 
-The patient mobile application serves as the primary interface for healthcare consumers, providing intuitive access to AI-powered health assessment, appointment management, and secure communication with healthcare providers. The application's design prioritizes accessibility and cultural sensitivity, with comprehensive support for both English and Amharic languages throughout all interface elements and AI interactions.
+The patient application serves as the primary interface for healthcare consumers, providing intuitive access to AI-powered health assessment, appointment management, and secure communication with healthcare providers. The application's design prioritizes accessibility and cultural sensitivity, with comprehensive support for both English and Amharic languages throughout all interface elements and AI interactions.
 
 #### Getting Started with the Patient App
 

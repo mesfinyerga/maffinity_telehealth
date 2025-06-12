@@ -8,7 +8,7 @@ Welcome to the TeleHealth Platform Patient App! This guide will help you navigat
 
 #### Creating Your Account
 
-1. **Download and Install**: Open the patient app in your web browser or mobile device
+1. **Download and Install**: Open the patient app in your web browser
 2. **Registration**: Tap "Create Account" on the login screen
 3. **Personal Information**: Enter your full name, email address, and phone number
 4. **Password**: Create a strong password with at least 8 characters
