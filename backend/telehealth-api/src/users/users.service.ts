@@ -1,11 +1,20 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from './user.entity';
 import { PatientProfile } from './patient-profile.entity';
 import { DoctorProfile } from './doctor-profile.entity';
-import { CreateUserDto, UpdateUserDto, CreatePatientProfileDto, CreateDoctorProfileDto } from './dto/user.dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  CreatePatientProfileDto,
+  CreateDoctorProfileDto,
+} from './dto/user.dto';
 import { UserRole } from '../common/enums';
 
 @Injectable()
@@ -29,7 +38,9 @@ export class UsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('User with this email or phone already exists');
+      throw new ConflictException(
+        'User with this email or phone already exists',
+      );
     }
 
     // Hash password
@@ -37,10 +48,13 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(createUserDto.password, saltRounds);
 
     // Create user
+    const { password, ...rest } = createUserDto;
     const user = this.usersRepository.create({
-      ...createUserDto,
+      ...rest,
       passwordHash,
-      dateOfBirth: createUserDto.dateOfBirth ? new Date(createUserDto.dateOfBirth) : null,
+      dateOfBirth: createUserDto.dateOfBirth
+        ? new Date(createUserDto.dateOfBirth)
+        : undefined,
     });
 
     const savedUser = await this.usersRepository.save(user);
@@ -118,7 +132,9 @@ export class UsersService {
 
     Object.assign(user, {
       ...updateUserDto,
-      dateOfBirth: updateUserDto.dateOfBirth ? new Date(updateUserDto.dateOfBirth) : user.dateOfBirth,
+      dateOfBirth: updateUserDto.dateOfBirth
+        ? new Date(updateUserDto.dateOfBirth)
+        : user.dateOfBirth,
     });
 
     return this.usersRepository.save(user);
@@ -129,7 +145,10 @@ export class UsersService {
     await this.usersRepository.remove(user);
   }
 
-  async createPatientProfile(userId: string, createPatientProfileDto: CreatePatientProfileDto): Promise<PatientProfile> {
+  async createPatientProfile(
+    userId: string,
+    createPatientProfileDto: CreatePatientProfileDto,
+  ): Promise<PatientProfile> {
     const profile = this.patientProfileRepository.create({
       userId,
       ...createPatientProfileDto,
@@ -138,7 +157,10 @@ export class UsersService {
     return this.patientProfileRepository.save(profile);
   }
 
-  async updatePatientProfile(userId: string, updatePatientProfileDto: CreatePatientProfileDto): Promise<PatientProfile> {
+  async updatePatientProfile(
+    userId: string,
+    updatePatientProfileDto: CreatePatientProfileDto,
+  ): Promise<PatientProfile> {
     const profile = await this.patientProfileRepository.findOne({
       where: { userId },
     });
@@ -151,14 +173,19 @@ export class UsersService {
     return this.patientProfileRepository.save(profile);
   }
 
-  async createDoctorProfile(userId: string, createDoctorProfileDto: CreateDoctorProfileDto): Promise<DoctorProfile> {
+  async createDoctorProfile(
+    userId: string,
+    createDoctorProfileDto: CreateDoctorProfileDto,
+  ): Promise<DoctorProfile> {
     // Check if license number already exists
     const existingDoctor = await this.doctorProfileRepository.findOne({
       where: { licenseNumber: createDoctorProfileDto.licenseNumber },
     });
 
     if (existingDoctor) {
-      throw new ConflictException('Doctor with this license number already exists');
+      throw new ConflictException(
+        'Doctor with this license number already exists',
+      );
     }
 
     const profile = this.doctorProfileRepository.create({
@@ -169,7 +196,10 @@ export class UsersService {
     return this.doctorProfileRepository.save(profile);
   }
 
-  async updateDoctorProfile(userId: string, updateDoctorProfileDto: CreateDoctorProfileDto): Promise<DoctorProfile> {
+  async updateDoctorProfile(
+    userId: string,
+    updateDoctorProfileDto: CreateDoctorProfileDto,
+  ): Promise<DoctorProfile> {
     const profile = await this.doctorProfileRepository.findOne({
       where: { userId },
     });
@@ -215,4 +245,3 @@ export class UsersService {
     await this.usersRepository.update(userId, { lastLogin: new Date() });
   }
 }
-
